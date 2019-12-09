@@ -1,4 +1,4 @@
-module Opdracht1
+module Robin
 
 import util::Resources;
 import lang::java::jdt::m3::Core;
@@ -183,9 +183,4 @@ public bool filterLine(str line){
 public set[loc] javaBestanden(Resource project) {
    return { a | /file(a) <- project, a.extension == "java" };
 }
-
-public int kevin(){
-	return 5;
-}
-
 
