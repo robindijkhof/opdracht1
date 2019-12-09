@@ -68,7 +68,7 @@ public void duplication(){
 	set[str] duplicates = {};
 	int dup = 0;
 
-	Resource smallsql = getProject(|project://                                                                             |);
+	Resource smallsql = getProject(|project://smallsql/src/smallsql/database|);
 	list[loc] bestanden = toList(javaBestanden(smallsql));
 
 	list[list[str]] filesAndCode = [ readFilterdLines(a) | a <- bestanden];
@@ -182,6 +182,10 @@ public bool filterLine(str line){
 
 public set[loc] javaBestanden(Resource project) {
    return { a | /file(a) <- project, a.extension == "java" };
+}
+
+public int kevin(){
+	return 5;
 }
 
 
