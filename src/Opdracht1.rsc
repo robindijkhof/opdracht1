@@ -88,6 +88,7 @@ public void cyclomaticComplexity(){
 
 	// cycle through all the declarations
 	// use http://tutor.rascal-mpl.org/Rascal/Libraries/lang/java/m3/AST/Declaration/Declaration.html to see how declarations is build
+	// note: Always store <fileLoc+methodName+parameters,cc> to make sure each entry is unique! (previous when we stored: <name, cc> and a function was added twice with the same cc, only 1 would be added)
 	for(D <- fileDeclarations){
 		visit (D) {
 			case \method(_, name, para, _):totalResult +=    <"fileLoc:<D.src> method: <name>(<para>)", 1>;  // method without a implementation, cc always is 1
