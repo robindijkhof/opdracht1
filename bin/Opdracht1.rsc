@@ -144,8 +144,8 @@ int calculateCC(Statement impl) {
         case \for(_,_,_,_) : cc += 1;
         case \catch(_,_): cc += 1;
         case \while(_,_) : cc += 1;
-        case \infix(_,"&&",_) : cc += 1;
-        case \infix(_,"||",_) : cc += 1;
+        case infix(_,"&&",_) : cc += 1;
+        case infix(_,"||",_) : cc += 1;
         case \foreach(_,_,_) : cc += 1;
         case \case(_) : cc += 1;
         case \do(_,_) : cc += 1;

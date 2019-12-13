@@ -210,18 +210,17 @@ private void cyclomaticComplexity2(projectLocation){
 			int cc = 1;
 			//println(D); //negeer de IDE error, print de waarde in a.file en b
 			visit (D) {
-				case \method(_,_,_,_,impl) : println(calcCC(impl));
-		        case \if(_,_,_) : cc += 1;
-		        case \case(_) : cc += 1;
-		        case \do(_,_) : cc += 1;
-		        case \while(_,_) : cc += 1;
+				case \if(_,_) : cc += 3;
+		        case \if(_,_,_) : cc += 10;
 		        case \for(_,_,_) : cc += 1;
 		        case \for(_,_,_,_) : cc += 1;
-		        case foreach(_,_,_) : cc += 1;
 		        case \catch(_,_): cc += 1;
-		        case \conditional(_,_,_): cc += 1;
+		        case \while(_,_) : cc += 1;
 		        case infix(_,"&&",_) : cc += 1;
 		        case infix(_,"||",_) : cc += 1;
+		        case \foreach(_,_,_) : cc += 1;
+		        case \case(_) : cc += 1;
+		        case \do(_,_) : cc += 1;
 			}
 			result += ( D.src : cc);
 		}
