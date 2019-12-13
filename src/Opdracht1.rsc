@@ -156,6 +156,7 @@ int calculateCC(Statement impl) {
         case \foreach(_,_,_) : cc += 1;
         case \case(_) : cc += 1;
         case \do(_,_) : cc += 1;
+        case \conditional(_,_,_) : cc += 1;
     }
     return cc;
 }
