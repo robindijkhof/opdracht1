@@ -14,6 +14,15 @@ import vis::Figure;
 import vis::Render;
 import vis::KeySym;
 import analysis::m3::AST;
+import util::Resources;
+import lang::java::jdt::m3::Core;
+import lang::java::m3::AST;
+import IO;
+import List;
+import Map;
+import Relation;
+import Set;
+import String;
 
 
 public void run() {
@@ -24,7 +33,102 @@ public void run() {
 	
 	// printMethods(|project://smallsql/|);
 	//countLines(projectLocation);
-	cyclomaticComplexity();
+	//cyclomaticComplexity();
+	//linesOfCode();
+	duplication2();
+}
+
+public void duplication2(){
+	int blockSize = 6;
+	list[str] duplicates = [];
+	set[str] duplicatesUniek = {};
+	int dup = 0;
+
+	Resource smallsql = getProject(|project://JabberPoint/|);
+	list[loc] bestanden = toList(javaBestanden(smallsql));
+
+	// list with all files and in them all lines
+	list[list[str]] filesAndCode = [ readFilterdLines(a) | a <- bestanden];
+	
+	notFound = true;
+	
+	//loop through each file
+	int fileIndex = 0;
+	while(fileIndex < size(filesAndCode)){
+	
+		// get list with all LOC
+		list[str] fileCode = filesAndCode[fileIndex];
+		
+		// loop through all lines excl the last blockSize (6)
+		int lineIndex = 0;
+		while(lineIndex < (size(fileCode) - blockSize)){
+			//block maken
+			str lines = "";
+			int blockIndex = lineIndex;
+			while(blockIndex < lineIndex + blockSize){
+				lines = lines + fileCode[blockIndex];
+				blockIndex += 1;
+			}
+			//lines =  long string with 6 lines of strings in it
+		
+			//loop through all remaining files
+			int comparingFileIndex = fileIndex;
+			while(comparingFileIndex < size(filesAndCode) && notFound){ // loop through the files
+				list[str] comparingFileCode = filesAndCode[comparingFileIndex]; // current file to check
+			
+				if(lineIndex < (size(fileCode) - 1 - blockSize)){ // Niet tegen zichtzelf bekijken
+					int comparingLineIndex = lineIndex + 1;
+					while(comparingLineIndex < (size(comparingFileCode)-blockSize)  && notFound){
+						str comparingLines = "";
+						int comparingBlockIndex = comparingLineIndex;
+						while(comparingBlockIndex < comparingLineIndex + blockSize){
+							comparingLines = comparingLines + comparingFileCode[comparingBlockIndex];
+							comparingBlockIndex += 1;
+						}
+						
+						
+						if(lines == comparingLines){
+						
+							comparingBlockIndex = comparingLineIndex;
+							while(comparingBlockIndex < comparingLineIndex + blockSize){
+								duplicates = duplicates + comparingFileCode[comparingBlockIndex];
+								duplicatesUniek = duplicatesUniek + comparingFileCode[comparingBlockIndex];
+								comparingBlockIndex += 1;
+							}
+						
+						
+							//duplicates = duplicates + lines;
+							dup = dup + 1;	
+							//println("dupplicate: <line>");
+							notFound = false;
+						}	
+					
+						comparingLineIndex = comparingLineIndex + 1;
+					}
+				}
+		
+		
+		
+				comparingFileIndex = comparingFileIndex + 1;
+			}
+			
+			notFound = true;
+			
+		
+			lineIndex = lineIndex + 1;
+		}
+	
+		fileIndex = fileIndex + 1;
+	}
+	
+
+	println("Aantal Duplication: <dup>");
+	println("Aantal duplication regels: <size(duplicates)>");
+	println("Aantal unieke duplication regels: <size(duplicates)>");
+	
+	
+	
+	
 }
 
 
@@ -83,6 +187,9 @@ private void countLines(loc project) {
 }
 
 
+public set[loc] javaBestanden(Resource project) {
+   return { a | /file(a) <- project, a.extension == "java" };
+}
 
 
 public set[loc] javaBestanden(loc project) {
@@ -183,8 +290,48 @@ int calculateCC(Statement impl) {
 }
 
 
+// ----------------------------------- LOC -----------------------------------
+public void linesOfCode(){
+	Resource smallsql = getProject(|project://smallsql/src/smallsql/database|);
+	set[loc] bestanden = javaBestanden(smallsql);
 
+	//Aantal regels per file.
+	map[loc, int] regels = ( a:size(readFilterdLines(a)) | a <- bestanden);
+	
+   	//for (<a, b> <- sort(toList(regels), bool(tuple[&a, num] x, tuple[&a, num] y){ return x[1] > y[1]; }))
+    //  println("<a.file>: <b> regels");  
+      
+    //Reducer om de regels bij elkaar op te tellen
+    int lines = reducer(range(regels), int(int a,int b){return a + b;}, 0);
+      
+    println("Total lines of java code: <lines> ");
+}
 
+public list[str] readFilterdLines(loc location){
+	return [ line | str line <- readFileLines(location), filterLine(line)];
+}
+
+public bool filterLine(str line){	
+	line = trim(line);
+	bool isJavaLine =  !(
+		line == "{" ||
+		line == "}" ||
+		line == "});" ||
+		line == ";" ||
+		line == "}});" ||
+		line == "})});" ||
+		line == "" ||
+		line == "" ||
+		startsWith(line, "import") ||
+		startsWith(line, "package") ||
+		startsWith(line, "//") ||
+		startsWith(line, "*/") ||
+		startsWith(line, "*") ||
+		startsWith(line, "/*")
+	);
+	
+	return isJavaLine;
+}
 
 
 
