@@ -266,7 +266,7 @@ public tuple[loc a, int b] getMethodSize(tuple[loc a, loc b] method){
 
 
 public list[str] readFilterdLines(loc location){
-	return [ line | str line <- readFileLines(location), filterLine(line)];
+	return [ trim(line) | str line <- readFileLines(location), filterLine(line)];
 }
 
 public bool filterLine(str line){	
