@@ -133,7 +133,7 @@ public void duplication2(){
 	set[str] duplicatesUniek = {};
 	int dup = 0;
 
-	Resource smallsql = getProject(|project://smallsql/src/smallsql/database|);
+	Resource smallsql = getProject(|project://JabberPoint|);
 	list[loc] bestanden = toList(javaBestanden(smallsql));
 
 	list[list[str]] filesAndCode = [ readFilterdLines(a) | a <- bestanden];
@@ -207,7 +207,7 @@ public void duplication2(){
 
 	println("Aantal Duplication: <dup>");
 	println("Aantal duplication regels: <size(duplicates)>");
-	println("Aantal unieke duplication regels: <size(duplicates)>");
+	println("Aantal unieke duplication regels: <size(duplicatesUniek)>");
 	
 	
 	
