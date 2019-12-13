@@ -132,6 +132,11 @@ public void duplication2(){
 }
 
 
+public list[str] readFilterdLines(loc location){
+	return [ line | str line <- readFileLines(location), filterLine(line)];
+}
+
+
 public bool aflopend(tuple[&a, num] x, tuple[&a, num] y) {
 	return x[1] > y[1];
 }
@@ -210,20 +215,20 @@ public void cyclomaticComplexity(){
 	// create the declarations belonging to these files
 	set[Declaration] fileDeclarations = createAstsFromFiles(bestanden, false);
 	
-	rel[str, int] totalResult = {};
+	rel[str, int, int] totalResult = {}; // loc+func+param, cc, LOC
 	
-
 	// cycle through all the declarations
 	// use http://tutor.rascal-mpl.org/Rascal/Libraries/lang/java/m3/AST/Declaration/Declaration.html to see how declarations is build
 	// note: Always store <fileLoc+methodName+parameters,cc> to make sure each entry is unique! (previous when we stored: <name, cc> and a function was added twice with the same cc, only 1 would be added)
 	for(D <- fileDeclarations){
 		visit (D) {
-			case \method(_, name, para, _):totalResult +=    <"fileLoc:<D.src> method: <name>(<para>)", 1>;  // method without a implementation, cc always is 1
-			case \method(_, name, para, _, impl):totalResult +=    <"fileLoc:<D.src> method: <name>(<para>)", calculateCC(impl)>;  // use the name and the impl
-			case \constructor(name, para, _, impl): totalResult += <"fileLoc:<D.src> method: <name>(<para>)", calculateCC(impl)>;  // use the name and the impl
+			
+			case \method(_, name, para, _):totalResult +=    		<"fileLoc:<D.src> method: <name>(<para>)", 1, 0>;  // method without a implementation, cc always is 1 and impl is 0 (no body)
+			case \method(_, name, para, _, impl):totalResult +=    	<"fileLoc:<D.src> method: <name>(<para>)", calculateCC(impl), calculateLOC(impl)>;  // use the name and the impl
+			case \constructor(name, para, _, impl): totalResult += 	<"fileLoc:<D.src> method: <name>(<para>)", calculateCC(impl), calculateLOC(impl)>;  // use the name and the impl
 		} 
 	}
-
+	
 	//Uncomment to see all methods and their CC
 	/*
 	for(<a,b> <- sort(toList(totalResult), aflopend)){
@@ -237,33 +242,60 @@ public void cyclomaticComplexity(){
 	num veryHigh = 0;
 	num totalMethods = size(totalResult);
 	
+	num lowLines = 0;
+	num moderateLines = 0;
+	num highLines = 0;
+	num veryHighLines = 0;
+	
+	
 	
 	// a: functionName, b: CC
-	for(<a,b> <- sort(toList(totalResult), aflopend)){
+	for(<a,b,c> <- totalResult){
 		if(b>50){
 			veryHigh += 1;
+			veryHighLines += c;
 		}else if(b >= 21){
 			high += 1;
+			highLines += c;
 		}else if(b >= 11){
 			moderate += 1;
+			moderateLines += c;
 		}else{
 			low += 1;
+			lowLines += c;
 		}
 	}
-	
+	num totalLines = lowLines + moderateLines + highLines + veryHighLines;
 
 	// print results
 	println("Cyclomatic Complexity Risk Calculation");
 	println("Project <projectLocation>");
 	println("Total methods: <totalMethods>");
+	println("Total lines: <totalLines>");
 	println("---------------------------------------");
-	println("Very high: <veryHigh> (<veryHigh / totalMethods * 100>%)");
-	println("High: <high> (<high / totalMethods * 100>%)");
-	println("Moderate: <moderate> (<moderate / totalMethods * 100>%)");
-	println("Low: <low> (<low / totalMethods * 100>%)");
+	println("Very high: functions: <veryHigh> (<veryHigh / totalMethods * 100>%) LOC: <veryHighLines> (<veryHighLines / totalLines * 100>%)");
+	println("High: functions: <high> (<high / totalMethods * 100>%) LOC: <highLines> (<highLines / totalLines * 100>%)");
+	println("Moderate: functions: <moderate> (<moderate / totalMethods * 100>%) LOC: <moderateLines> (<moderateLines / totalLines * 100>%)");
+	println("Low: functions: <low> (<low / totalMethods * 100>%) LOC: <lowLines> (<lowLines / totalLines * 100>%)");
 	println("---------------------------------------");
 }
 
+
+public void linesOfCode(){
+	Resource smallsql = getProject(|project://JabberPoint/|);
+	set[loc] bestanden = javaBestanden(smallsql);
+
+	//Aantal regels per file.
+	map[loc, int] regels = ( a:size(readFilterdLines(a)) | a <- bestanden);
+	
+   	//for (<a, b> <- sort(toList(regels), bool(tuple[&a, num] x, tuple[&a, num] y){ return x[1] > y[1]; }))
+    //  println("<a.file>: <b> regels");  
+      
+    //Reducer om de regels bij elkaar op te tellen
+    int lines = reducer(range(regels), int(int a,int b){return a + b;}, 0);
+      
+    println("Total lines of java code: <lines> ");
+}
 
 
 
@@ -287,6 +319,11 @@ int calculateCC(Statement impl) {
         case \conditional(_,_,_) : cc += 1;
     }
     return cc;
+}
+
+int calculateLOC(Statement impl) {
+	// println(impl.src);
+	return size(readFilterdLines(impl.src));
 }
 
 

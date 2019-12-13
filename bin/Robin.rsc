@@ -162,6 +162,7 @@ public void duplication2(){
 				if(lineIndex < (size(fileCode) - 1 - blockSize)){ // Niet tegen zichtzelf bekijken
 					int comparingLineIndex = lineIndex + 1;
 					while(comparingLineIndex < (size(comparingFileCode)-blockSize)  && notFound){
+						//Block om te vergelijken maken.
 						str comparingLines = "";
 						int comparingBlockIndex = comparingLineIndex;
 						while(comparingBlockIndex < comparingLineIndex + blockSize){
@@ -172,6 +173,7 @@ public void duplication2(){
 						
 						if(lines == comparingLines){
 						
+							//De gevonden lines individueel toevoegen aan de list en set.
 							comparingBlockIndex = comparingLineIndex;
 							while(comparingBlockIndex < comparingLineIndex + blockSize){
 								duplicates = duplicates + comparingFileCode[comparingBlockIndex];
@@ -266,7 +268,7 @@ public tuple[loc a, int b] getMethodSize(tuple[loc a, loc b] method){
 
 
 public list[str] readFilterdLines(loc location){
-	return [ line | str line <- readFileLines(location), filterLine(line)];
+	return [ trim(line) | str line <- readFileLines(location), filterLine(line)];
 }
 
 public bool filterLine(str line){	
