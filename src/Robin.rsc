@@ -68,29 +68,29 @@ public void duplication(){
 	set[str] duplicates = {};
 	int dup = 0;
 
-	Resource smallsql = getProject(|project://smallsql/src/smallsql/database|);
+	Resource smallsql = getProject(|project://JabberPoint|);
 	list[loc] bestanden = toList(javaBestanden(smallsql));
 
 	list[list[str]] filesAndCode = [ readFilterdLines(a) | a <- bestanden];
 	
 	notFound = true;
 	
-	int i = 0;
-	while(i < size(filesAndCode)){
-		list[str] fileCode = filesAndCode[i];
+	int fileIndex = 0;
+	while(fileIndex < size(filesAndCode)){
+		list[str] fileCode = filesAndCode[fileIndex];
 		
-		int j = 0;
-		while(j < size(fileCode)){
-			str line = fileCode[j];
+		int lineIndex = 0;
+		while(lineIndex < size(fileCode)){
+			str line = fileCode[lineIndex];
 		
-			int x = i;
-			while(x < size(filesAndCode) && notFound){
-				list[str] comparingFileCode = filesAndCode[x];
+			int comparingFileIndex = fileIndex;
+			while(comparingFileIndex < size(filesAndCode) && notFound){
+				list[str] comparingFileCode = filesAndCode[comparingFileIndex];
 			
-				if(j < size(fileCode) - 1){ // Niet tegen zichtzelf bekijken
-					int y = j + 1;
-					while(y < size(comparingFileCode)  && notFound){
-						str comparingLine = comparingFileCode[y];
+				if(lineIndex < size(fileCode) - 1){ // Niet tegen zichtzelf bekijken
+					int comparingLineIndex = lineIndex + 1;
+					while(comparingLineIndex < size(comparingFileCode)  && notFound){
+						str comparingLine = comparingFileCode[comparingLineIndex];
 						
 						if(line == comparingLine){
 							duplicates = duplicates + line;
@@ -99,35 +99,116 @@ public void duplication(){
 							notFound = false;
 						}	
 					
-						y = y + 1;
+						comparingLineIndex = comparingLineIndex + 1;
 					}
 				}
 		
 		
 		
-				x = x + 1;
+				comparingFileIndex = comparingFileIndex + 1;
 			}
 			
 			notFound = true;
 			
 		
-		
-		
-			j = j + 1;
+			lineIndex = lineIndex + 1;
 		}
 	
-	//	list[str] lines = filesAndCode[range(filesAndCode)[i]];
-	//	//println(index(range(filesAndCode))[0]);
-	//
-	//
-	//
-	//
-		i = i + 1;
+		fileIndex = fileIndex + 1;
 	}
 	
 
 	println("Duplication: <dup>");
 	println("Unieke duplication: <size(duplicates)>");
+	
+	
+	
+}
+
+
+
+public void duplication2(){
+	int blockSize = 6;
+	list[str] duplicates = [];
+	set[str] duplicatesUniek = {};
+	int dup = 0;
+
+	Resource smallsql = getProject(|project://smallsql/src/smallsql/database|);
+	list[loc] bestanden = toList(javaBestanden(smallsql));
+
+	list[list[str]] filesAndCode = [ readFilterdLines(a) | a <- bestanden];
+	
+	notFound = true;
+	
+	int fileIndex = 0;
+	while(fileIndex < size(filesAndCode)){
+		list[str] fileCode = filesAndCode[fileIndex];
+		
+		int lineIndex = 0;
+		while(lineIndex < (size(fileCode) - blockSize)){
+			//block maken
+			str lines = "";
+			int blockIndex = lineIndex;
+			while(blockIndex < lineIndex + blockSize){
+				lines = lines + fileCode[blockIndex];
+				blockIndex += 1;
+			}
+	
+		
+			int comparingFileIndex = fileIndex;
+			while(comparingFileIndex < size(filesAndCode) && notFound){
+				list[str] comparingFileCode = filesAndCode[comparingFileIndex];
+			
+				if(lineIndex < (size(fileCode) - 1 - blockSize)){ // Niet tegen zichtzelf bekijken
+					int comparingLineIndex = lineIndex + 1;
+					while(comparingLineIndex < (size(comparingFileCode)-blockSize)  && notFound){
+						str comparingLines = "";
+						int comparingBlockIndex = comparingLineIndex;
+						while(comparingBlockIndex < comparingLineIndex + blockSize){
+							comparingLines = comparingLines + comparingFileCode[comparingBlockIndex];
+							comparingBlockIndex += 1;
+						}
+						
+						
+						if(lines == comparingLines){
+						
+							comparingBlockIndex = comparingLineIndex;
+							while(comparingBlockIndex < comparingLineIndex + blockSize){
+								duplicates = duplicates + comparingFileCode[comparingBlockIndex];
+								duplicatesUniek = duplicatesUniek + comparingFileCode[comparingBlockIndex];
+								comparingBlockIndex += 1;
+							}
+						
+						
+							//duplicates = duplicates + lines;
+							dup = dup + 1;	
+							//println("dupplicate: <line>");
+							notFound = false;
+						}	
+					
+						comparingLineIndex = comparingLineIndex + 1;
+					}
+				}
+		
+		
+		
+				comparingFileIndex = comparingFileIndex + 1;
+			}
+			
+			notFound = true;
+			
+		
+			lineIndex = lineIndex + 1;
+		}
+	
+		fileIndex = fileIndex + 1;
+	}
+	
+
+	println("Aantal Duplication: <dup>");
+	println("Aantal duplication regels: <size(duplicates)>");
+	println("Aantal unieke duplication regels: <size(duplicates)>");
+	
 	
 	
 	
