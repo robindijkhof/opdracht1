@@ -132,10 +132,6 @@ public void duplication2(){
 }
 
 
-public list[str] readFilterdLines(loc location){
-	return [ line | str line <- readFileLines(location), filterLine(line)];
-}
-
 
 public bool aflopend(tuple[&a, num] x, tuple[&a, num] y) {
 	return x[1] > y[1];
@@ -281,21 +277,7 @@ public void cyclomaticComplexity(){
 }
 
 
-public void linesOfCode(){
-	Resource smallsql = getProject(|project://JabberPoint/|);
-	set[loc] bestanden = javaBestanden(smallsql);
 
-	//Aantal regels per file.
-	map[loc, int] regels = ( a:size(readFilterdLines(a)) | a <- bestanden);
-	
-   	//for (<a, b> <- sort(toList(regels), bool(tuple[&a, num] x, tuple[&a, num] y){ return x[1] > y[1]; }))
-    //  println("<a.file>: <b> regels");  
-      
-    //Reducer om de regels bij elkaar op te tellen
-    int lines = reducer(range(regels), int(int a,int b){return a + b;}, 0);
-      
-    println("Total lines of java code: <lines> ");
-}
 
 
 
@@ -328,15 +310,22 @@ int calculateLOC(Statement impl) {
 
 
 // ----------------------------------- LOC -----------------------------------
+
+
+public list[str] readFilterdLines(loc location){
+	inCommentMode = false; // reset to be sure
+	return [ line | str line <- readFileLines(location), filterLine(line)];
+}
+
+
 public void linesOfCode(){
-	Resource smallsql = getProject(|project://smallsql/src/smallsql/database|);
+	Resource smallsql = getProject(|project://JabberPoint/|);
 	set[loc] bestanden = javaBestanden(smallsql);
 
 	//Aantal regels per file.
+	//map[loc, int] regels = ( a:size(readFilterdLines(a)) | a <- bestanden , a.file == "TestFile.java");
 	map[loc, int] regels = ( a:size(readFilterdLines(a)) | a <- bestanden);
-	
-   	//for (<a, b> <- sort(toList(regels), bool(tuple[&a, num] x, tuple[&a, num] y){ return x[1] > y[1]; }))
-    //  println("<a.file>: <b> regels");  
+   
       
     //Reducer om de regels bij elkaar op te tellen
     int lines = reducer(range(regels), int(int a,int b){return a + b;}, 0);
@@ -344,11 +333,116 @@ public void linesOfCode(){
     println("Total lines of java code: <lines> ");
 }
 
-public list[str] readFilterdLines(loc location){
-	return [ line | str line <- readFileLines(location), filterLine(line)];
-}
+
+// list[str] emptyLines = [N | str N <- lines, /(^\s*(\/|\*))|(^\s*$)|(^\s*(\{|\})\s*$)/ := N];
+
+bool inCommentMode = false;
 
 public bool filterLine(str line){	
+	line = trim(line);
+	
+	bool isJavaLine =  !(
+		/^(\}|\)|;)+$/ := line || //check for occurrences of }, ), })}, };)}, etc
+		/^(\{|\))+$/ := line || // also check for occurrences of (for example): {{, {(, {(
+		/^$/ := line || // check for empty lines
+		/^(import|package|\/\/)/ := line || // check for starts with import, package, //
+		/^(\*\/|\*|\/\*)/ := line // check for starts with *, */, /*
+	);
+	
+	return isJavaLine;
+}
+
+public bool filterLineComment(str line){	
+	line = trim(line);
+	
+	
+	bool startComment = /\/\*/ := line;
+	bool endComment = /\*\// := line;
+	
+	inCommentMode = inCommentMode || startComment;
+	if(endComment) {
+		inCommentMode = false;
+	}
+	
+	// println("<line>  -- <startComment> - <endComment> - <inCommentMode>");
+	
+	bool isJavaLine =  !(
+		/^(\}|\)|;)+$/ := line || // use /^(}|\))+$;?/ for exact the same results as previous (this includes f.e.: };)} )
+		/^(\{|\))+$/ := line || // also check for occurrences of (for example): {{, {(, {(
+		/^$/ := line || // check for empty lines
+		/^(import|package|\/\/)/ := line  // check for starts with import, package, //
+		 // /^(\*)/ := line // check for starts with *, */, /*
+	);
+	
+	if(startComment && endComment) {
+		return false;
+	}
+	
+	if(inCommentMode || endComment){
+		return false;
+	}
+	
+	return isJavaLine;
+}
+
+public bool filterLineCommentComplex(str line){	
+	line = trim(line);
+	
+	bool startComment = /\/\*/ := line;
+	bool endComment = /\*\// := line;
+	
+	inCommentMode = inCommentMode || startComment;
+	if(endComment) {
+		inCommentMode = false;
+	}
+	
+	bool isJavaLine =  !(
+		/^(\}|\)|;)+$/ := line || // use /^(}|\))+$;?/ for exact the same results as previous (this includes f.e.: };)} )
+		/^(\{|\))+$/ := line || // also check for occurrences of (for example): {{, {(, {(
+		/^$/ := line || // check for empty lines
+		/^(import|package|\/\/)/ := line // check for starts with import, package, //
+	);
+	
+	if(endComment) {
+		if(/^\*\/$/ := line){ // check if the string ONLY contains */
+			return false;
+		}else {
+			if(/\*\/$/ := line){ // the string not ONLY contains */ but it DOES contains */ somewhere, check if this is at the end
+				return false;
+			}
+		}
+	}
+	
+	if(startComment) {
+		if(/^\/\*$/ := line){ // check if the string ONLY contains /*
+			return false;
+		}else {
+			if(/^\/\*/ := line){ // the string not ONLY contains /* but it DOES contains /* somewhere, check if this is at the start
+				return false;
+			}
+		}
+	}
+	
+	
+	//TODO: this cannot handle LOC with multiple comments in it..
+	// if this line started a comment or ended it, then check if it contains javaLines somewhere
+	if(startComment || endComment){
+		return isJavaLine;
+	}
+	
+	
+	// if this string 
+	if(inCommentMode){
+		return false;
+	}
+	
+	return isJavaLine;
+}
+
+
+
+
+public bool filterLineStringCompare(str line){	
 	line = trim(line);
 	bool isJavaLine =  !(
 		line == "{" ||
@@ -369,8 +463,6 @@ public bool filterLine(str line){
 	
 	return isJavaLine;
 }
-
-
 
 
 //==================================================== OLD =================================================================

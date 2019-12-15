@@ -188,7 +188,24 @@ public list[str] readFilterdLines(loc location){
 	return [ line | str line <- readFileLines(location), filterLine(line)];
 }
 
+
 public bool filterLine(str line){	
+	line = trim(line);
+	
+	bool isJavaLine =  !(
+		/^(\}|\)|;)+$/ := line || //check for occurrences of }, ), })}, };)}, etc
+		/^(\{|\))+$/ := line || // also check for occurrences of (for example): {{, {(, {(
+		/^$/ := line || // check for empty lines
+		/^(import|package|\/\/)/ := line || // check for starts with import, package, //
+		/^(\*\/|\*|\/\*)/ := line // check for starts with *, */, /*
+	);
+	
+	return isJavaLine;
+}
+
+
+// Alternative, not used right now!
+public bool filterLineStringCompare(str line){	
 	line = trim(line);
 	bool isJavaLine =  !(
 		line == "{" ||
