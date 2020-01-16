@@ -1,4 +1,4 @@
-module Opdracht2
+module Opdracht2_Kevin
 
 import util::Resources;
 import lang::java::jdt::m3::Core;
@@ -9,7 +9,6 @@ import Map;
 import Relation;
 import Set;
 import String;
-
 import vis::Figure;
 import vis::Render;
 import vis::KeySym;
@@ -28,11 +27,12 @@ public void run(){
 
 public list[Class] getData(){
 	list[Class] infodata = [
-		<"Eerste klasse", 40, 90, |project://example-project/src/HelloWorld.java|, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>,
-		<"Tweede klasse", 30, 120, |project://example-project/src/HelloWorld.java|, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>
+		<"Eerste klasse", 30, 120, |project://example-project/src/HelloWorld.java|, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>,
+		<"Tweede klasse", 50, 30, |project://example-project/src/HelloWorld.java|, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>
 	];
 	return infodata;
 }
+
 
 
 void renderProjectView(list[Class] projectData){
@@ -63,3 +63,5 @@ Figure createBox(int width, int height){
 list[&T] copy(int n, &T element) {
 	return [ element | _ <- [0..n] ];
 }
+
+
