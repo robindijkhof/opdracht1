@@ -148,6 +148,95 @@ public void cyclomaticComplexity(){
 	println("---------------------------------------");
 }
 
+public void duplication(){
+	int blockSize = 6;
+	list[str] duplicates = [];
+	set[str] duplicatesUniek = {};
+	int dup = 0;
+
+	Resource smallsql = getProject(|project://smallsql/src/smallsql/database|);
+	list[loc] bestanden = toList(javaBestanden(smallsql));
+
+	list[list[str]] filesAndCode = [ readFilterdLines(a) | a <- bestanden];
+	
+	notFound = true;
+	
+	int fileIndex = 0;
+	while(fileIndex < size(filesAndCode)){
+		list[str] fileCode = filesAndCode[fileIndex];
+		
+		int lineIndex = 0;
+		while(lineIndex < (size(fileCode) - blockSize)){
+			//block maken
+			str lines = "";
+			int blockIndex = lineIndex;
+			while(blockIndex < lineIndex + blockSize){
+				lines = lines + fileCode[blockIndex];
+				blockIndex += 1;
+			}
+	
+		
+			int comparingFileIndex = fileIndex;
+			while(comparingFileIndex < size(filesAndCode) && notFound){
+				list[str] comparingFileCode = filesAndCode[comparingFileIndex];
+			
+				if(lineIndex < (size(fileCode) - 1 - blockSize)){ // Niet tegen zichtzelf bekijken
+					int comparingLineIndex = lineIndex + 1;
+					while(comparingLineIndex < (size(comparingFileCode)-blockSize)  && notFound){
+						//Block om te vergelijken maken.
+						str comparingLines = "";
+						int comparingBlockIndex = comparingLineIndex;
+						while(comparingBlockIndex < comparingLineIndex + blockSize){
+							comparingLines = comparingLines + comparingFileCode[comparingBlockIndex];
+							comparingBlockIndex += 1;
+						}
+						
+						
+						if(lines == comparingLines){
+						
+							//De gevonden lines individueel toevoegen aan de list en set.
+							comparingBlockIndex = comparingLineIndex;
+							while(comparingBlockIndex < comparingLineIndex + blockSize){
+								duplicates = duplicates + comparingFileCode[comparingBlockIndex];
+								duplicatesUniek = duplicatesUniek + comparingFileCode[comparingBlockIndex];
+								comparingBlockIndex += 1;
+							}
+						
+						
+							//duplicates = duplicates + lines;
+							dup = dup + 1;	
+							//println("dupplicate: <line>");
+							notFound = false;
+						}	
+					
+						comparingLineIndex = comparingLineIndex + 1;
+					}
+				}
+		
+		
+		
+				comparingFileIndex = comparingFileIndex + 1;
+			}
+			
+			notFound = true;
+			
+		
+			lineIndex = lineIndex + 1;
+		}
+	
+		fileIndex = fileIndex + 1;
+	}
+	
+
+	println("Aantal Duplication: <dup>");
+	println("Aantal duplication regels: <size(duplicates)>");
+	println("Aantal unieke duplication regels: <size(duplicatesUniek)>");
+	
+	
+	
+	
+}
+
 
 // ---------------------------------------- Helper functions -------------------------------------------
 int calculateLOC(Statement impl) {
@@ -185,7 +274,7 @@ public tuple[loc a, int b] getMethodSize(tuple[loc a, loc b] method){
 
 
 public list[str] readFilterdLines(loc location){
-	return [ line | str line <- readFileLines(location), filterLine(line)];
+	return [ trim(line) | str line <- readFileLines(location), filterLine(line)];
 }
 
 
