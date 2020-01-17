@@ -14,6 +14,7 @@ import vis::Figure;
 import vis::Render;
 import vis::KeySym;
 import Map;
+import DataFetcher;
 
 // Zou methodes ook kunnen opvragen dmv een nieuwe methode met als arugment de loc.
 alias Class = tuple[str name,int complexity,int unitsize, loc location, list[Method] methods];
@@ -26,13 +27,6 @@ public void run(){
 	renderProjectView(infodata);
 }
 
-public list[Class] getData(){
-	list[Class] infodata = [
-		<"Eerste klasse", 40, 90, |project://example-project/src/HelloWorld.java|, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>,
-		<"Tweede klasse", 30, 120, |project://example-project/src/HelloWorld.java|, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>
-	];
-	return infodata;
-}
 
 
 void renderProjectView(list[Class] projectData){
