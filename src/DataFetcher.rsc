@@ -36,12 +36,10 @@ public list[Class] getData(){
 	for(D <- fileDeclarations){
 		visit (D) {	
 			//case \class(name, _, _, body): println(createClass(name, body, first.src));
-			case \class(name, _, _, body): classes += <name, getCC(body), getSize(body), D.src, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>;  // method without a implementation, cc always is 1 and impl is 0 (no body)
+			case \class(name, _, _, body): classes += <name, getMaxCC(body), getSize(body), D.src, getMethods(body)>;  // method without a implementation, cc always is 1 and impl is 0 (no body)
 		} 
 	}
 	
-	
-	println(classes);
 	return classes;
 }
 
@@ -61,6 +59,19 @@ Class createClass(str name, list[Declaration] declarations, loc location){
 	return <name, cc, size, location, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>;
 }
 
+list[Method] getMethods(list[Declaration] declarations){
+	list[Method] methods = [];
+		
+	for(D <- declarations){
+		visit (D) {
+			case \method(_, name, para, _, impl):methods += <name, calculateCC(impl), calculateLOC(impl), impl.src>;  // use the name and the impl
+			case \constructor(name, para, _, impl): methods += <name, calculateCC(impl), calculateLOC(impl), impl.src>;  // use the name and the impl
+		} 
+	}	
+	
+	return methods;
+}
+
 
 int getSize(list[Declaration] declarations){
 	int size = 0;
@@ -75,8 +86,8 @@ int getSize(list[Declaration] declarations){
 	return size;
 }
 
-int getCC(list[Declaration] declarations){
-	int cc = 1;
+int getMaxCC(list[Declaration] declarations){
+	list[int] cc = [1];
 
 	for(D <- declarations){
 		visit (D) {
@@ -85,7 +96,7 @@ int getCC(list[Declaration] declarations){
 			case \constructor(name, para, _, impl): cc += calculateCC(impl);  // use the name and the impl
 		} 
 	}	
-	return cc;
+	return max(cc);
 }
 
 // impl = method

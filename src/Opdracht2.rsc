@@ -45,6 +45,15 @@ Figure createClassBox(Class class){
 	return createBox(class.complexity, class.unitsize);
 }
 
+list[Class] getDummyData(){
+	return [
+		<"Klasse1", 9, 400, |project://smallsql/src/smallsql/database|, [<"Methode1", 4, 20, |project://smallsql/src/smallsql/database|>, <"Methode2", 9, 400, |project://smallsql/src/smallsql/database|>]>,
+		<"Klasse2", 6, 100, |project://smallsql/src/smallsql/database|, [<"Methode1", 6, 100, |project://smallsql/src/smallsql/database|>]>,
+		<"Klasse3", 2, 50, |project://smallsql/src/smallsql/database|, [<"Methode1", 2, 50, |project://smallsql/src/smallsql/database|>]>,
+		<"Klasse4", 2, 400, |project://smallsql/src/smallsql/database|, [<"Methode1", 2, 400, |project://smallsql/src/smallsql/database|>]>
+	];
+}
+
 
 // ==================================================== Helper functions ===========================================================
 Figure createBox(int width, int height){
