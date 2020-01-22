@@ -27,52 +27,43 @@ alias Method = tuple[str name, int complexity, int unitsize, loc location];
 
 list[Class] projectData;
 
-Figure menu;
-
-bool complexityEnabled = true;
-bool unitSizeEnabled = true;
-
 public void run(){
+	println("Hello");
 	//list[Class] infodata = getData();
-	//projectData = getDummyData();
-	projectData = getData();
+	projectData = getDummyData();
 	// list[Class] sortedList = sort(infodata, sortLOC);
-	
-   	Figure complexityButton = button("Complexity", void(){complexityEnabled = !complexityEnabled; renderProjectView(projectData);});
-   	Figure unitSizeButton = button("UnitSize", void(){unitSizeEnabled = !unitSizeEnabled; renderProjectView(projectData);});
-   	Figure returnButton = button("Return", void(){renderProjectView(projectData);});
-	menu = hcat([complexityButton, unitSizeButton, returnButton]);
-	
 	renderProjectView(projectData);
 }
 
 // --------------------- Project --------------------------------------
 void renderProjectView(list[Class] projectData){
 	list[Figure] classFigures = [];
-	
 	for(Class class <- projectData) {
 		classFigures += createClassBox(class);
 	}
 
-	//Figure treemapFig = treemap(classFigures, vshrink(0.9));
-	// render("ProjectView", vcat([menu, treemapFig, text(getDataString())]));
-	finalRender(classFigures);
+	render("ProjectView", treemap(classFigures));
 }
-
-void finalRender(list[Figure] figures){
-	Figure treemapFig = treemap(figures, vshrink(0.9));
-	render("ProjectView", vcat([menu, treemapFig, text(getDataString())]));
-}
-
 
 
 Figure createClassBox(Class class){
-
+	/*
+	real complexityPerc = class.complexity / 50.0; // calc the relative complexity percentage based on max allowed
+	real sizePerc = class.unitsize / 300.0; // calc the relative size percentage based on max allowed
+	
+	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
+	real sizePoints = sizePerc * 100.0; // assign (penalty) points
+	
+	int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
+	*/
+	
+	
 	int totalPoints = calcPenaltyPoints(class.complexity, class.unitsize);
 	Color color = generateColor(calcComplexityPerc(class.complexity)); // generate a color between green -> red based on the complexity rating
 	
 	
 	bool event_openMethod(int butnr, map[KeyModifier,bool] modifiers) {
+		println("open class" + class.name);
 		renderClassView(class);
 		return true;
 	};
@@ -90,14 +81,7 @@ int calcPenaltyPoints(int complexity, int unitSize){
 	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
 	real sizePoints = sizePerc * 100.0; // assign (penalty) points
 	
-	int totalPoints = 0;
-	if(complexityEnabled){
-		totalPoints += toInt(complexityPoints);
-	}
-	if(unitSizeEnabled){
-		totalPoints += toInt(sizePoints);
-	}
-	// int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
+	int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
 	
 	return totalPoints;
 }
@@ -113,8 +97,7 @@ void renderClassView(Class class){
 		methodFigures += createMethodBox(method);
 	}
 
-	//render("ProjectView", treemap(methodFigures));
-	finalRender(methodFigures);
+	render("ProjectView", treemap(methodFigures));
 }
 
 Figure createMethodBox(Method method){
@@ -130,6 +113,9 @@ Figure createMethodBox(Method method){
 	
 	
 	bool event_openProjectView(int butnr, map[KeyModifier,bool] modifiers) {
+		println("method click!!!");
+		println(butnr);
+		renderProjectView(projectData);
 		return true;
 	}
 	
@@ -147,21 +133,7 @@ Color generateColor(real percentage){
 
 
 // ==================================================== Helper functions ===========================================================
-str getDataString(){
-	str result = "";
-	if(complexityEnabled){
-		result += "complexity enabled     ";
-	}else{
-		result += "complexity dissabled     ";
-	}
-	
-	if(unitSizeEnabled){
-		result += "unitSize enabled";
-	}else{
-		result += "unitSize dissabled";
-	}
-	return result;
-}
+
 /*
 Figure createBox(int width, int height){
 	Figure redBox = box(size(width, height), fillColor("red"));
