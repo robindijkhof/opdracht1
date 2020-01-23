@@ -1,4 +1,4 @@
-module Opdracht2_Kevin
+module Opdracht2_Kevin_boxes
 
 import util::Resources;
 import lang::java::jdt::m3::Core;
@@ -20,6 +20,12 @@ import util::Math;
 
 num NORM_UNITSIZE = 6;
 
+// SORTMODE
+int SORTMODE_COMPLEXITY = 1;
+int SORTMODE_UNITSIZE = 2; 
+
+int sortmode = 2;
+
 // Zou methodes ook kunnen opvragen dmv een nieuwe methode met als arugment de loc.
 alias Class = tuple[str name,int complexity,int unitsize, loc location, list[Method] methods];
 alias Method = tuple[str name, int complexity, int unitsize, loc location];
@@ -27,103 +33,141 @@ alias Method = tuple[str name, int complexity, int unitsize, loc location];
 
 list[Class] projectData;
 
+Figure menu;
+
+bool complexityEnabled = true;
+bool unitSizeEnabled = true;
+
+int sortMode = 2;
+
+Class classSelected;
+bool inClassMode = false;
+
 public void run(){
-	println("Hello");
-	//list[Class] infodata = getData();
-	projectData = getDummyData();
+	//projectData = getDummyData();
+	projectData = getData();
 	// list[Class] sortedList = sort(infodata, sortLOC);
+	
+   	Figure complexityButton = button("Complexity", void(){sortmode = SORTMODE_COMPLEXITY; refresh();});
+   	Figure unitSizeButton = button("UnitSize", void(){sortmode = SORTMODE_UNITSIZE; refresh();});
+   	Figure returnButton = button("Return", void(){inClassMode = false;refresh();});
+	menu = hcat([complexityButton, unitSizeButton, returnButton], vshrink(0.05));
+
+	refresh();
+}
+
+void refresh(){
+	if(inClassMode){
+		renderClassView(classSelected);
+		return;
+	}
 	renderProjectView(projectData);
 }
 
-// --------------------- Project --------------------------------------
-void renderProjectView(list[Class] projectData){
+// ---------------------------------------------------- RENDERS ----------------------------------------------------------------
+void renderProjectView(list[Class] projectDataUnsorted){
+	list[Class] projectData = projectDataUnsorted;
+	if(sortmode == SORTMODE_COMPLEXITY){
+		projectData = sort(projectDataUnsorted, sortComplexity);
+	}else if (sortmode == SORTMODE_UNITSIZE){
+		projectData = sort(projectDataUnsorted, sortUnitsize);
+	}
+	
+	
 	list[Figure] classFigures = [];
+	
 	for(Class class <- projectData) {
 		classFigures += createClassBox(class);
 	}
 
-	render("ProjectView", treemap(classFigures));
+	finalRender(classFigures);
 }
 
 
+void renderClassView(Class class){
+	list[Method] methodList = class.methods;
+
+	if(sortmode == SORTMODE_COMPLEXITY){
+		methodList = sort(class.methods, sortComplexity);
+	}else if (sortmode == SORTMODE_UNITSIZE){
+		methodList = sort(class.methods, sortUnitsize);
+	}
+
+	inClassMode = true;
+	classSelected = class;
+
+	list[Figure] methodFigures = [];
+	for(Method method <- methodList) {
+		methodFigures += createMethodBox(method);
+	}
+
+	finalRender(methodFigures);
+}
+
+
+void finalRender(list[Figure] figures){
+	//Figure boxes = Figure(figures);
+	Figure boxes = hcat(figures);
+	render("ProjectView", vcat([menu, scrollable(boxes)]));
+}
+
+
+
+// ==================================================== BOXES ======================================================================
 Figure createClassBox(Class class){
-	/*
-	real complexityPerc = class.complexity / 50.0; // calc the relative complexity percentage based on max allowed
-	real sizePerc = class.unitsize / 300.0; // calc the relative size percentage based on max allowed
-	
-	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
-	real sizePoints = sizePerc * 100.0; // assign (penalty) points
-	
-	int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
-	*/
-	
-	
-	int totalPoints = calcPenaltyPoints(class.complexity, class.unitsize);
-	Color color = generateColor(calcComplexityPerc(class.complexity)); // generate a color between green -> red based on the complexity rating
-	
-	
 	bool event_openMethod(int butnr, map[KeyModifier,bool] modifiers) {
-		println("open class" + class.name);
 		renderClassView(class);
 		return true;
 	};
 	
-	Figure figure = box(text(class.name),area(totalPoints), fillColor(color), onMouseDown(event_openMethod)); // create the figure
+	real penaltyPoints = toReal(calcPenaltyPoints(class.complexity, class.unitsize));
+	real penaltyPerc = penaltyPoints / 200.0;
+	Color color = generateColor(penaltyPerc);
+	
+	Figure boxSized = box( createBoxSize(class.complexity, class.unitsize), fillColor(color), onMouseDown(event_openMethod), hresizable(false), vresizable(false)); // create the figure
+	Figure figure = overlay([boxSized, text(class.name, align(0.5,0.6) )]);
 	
 	return figure;
 }
 
 
-int calcPenaltyPoints(int complexity, int unitSize){
-	real complexityPerc = calcComplexityPerc(complexity); // calc the relative complexity percentage based on max allowed
-	real sizePerc = unitSize / 300.0; // calc the relative size percentage based on max allowed
+Figure createMethodBox(Method method){
+	bool event_openProjectView(int butnr, map[KeyModifier,bool] modifiers) {
+		return true;
+	}
 	
-	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
-	real sizePoints = sizePerc * 100.0; // assign (penalty) points
+	real penaltyPoints = toReal(calcPenaltyPoints(method.complexity, method.unitsize));
+	real penaltyPerc = penaltyPoints / 200.0;
+	Color color = generateColor(penaltyPerc);
+
+	Figure boxSized = box( createBoxSize(method.complexity, method.unitsize), fillColor(color), onMouseDown(event_openProjectView), hresizable(false), vresizable(false)); // create the figure
+	//Figure figure = box(text(method.name),createBoxSize(method.complexity, method.unitsize), fillColor(color), onMouseDown(event_openProjectView)); // create the figure
+	Figure figure = overlay([boxSized, text(method.name, align(0.5,0.6) )]);
 	
-	int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
-	
-	return totalPoints;
+	return figure;
 }
+
+
+
+// ==================================================== Helper functions ===========================================================
+
 
 real calcComplexityPerc(int complexity){
 	return complexity / 50.0; // calc the relative complexity percentage based on max allowed
 }
 
-// --------------------- Class --------------------------------------
-void renderClassView(Class class){
-	list[Figure] methodFigures = [];
-	for(Method method <- class.methods) {
-		methodFigures += createMethodBox(method);
-	}
-
-	render("ProjectView", treemap(methodFigures));
-}
-
-Figure createMethodBox(Method method){
-	real complexityPerc = method.complexity / 50.0; // calc the relative complexity percentage based on max allowed
-	real sizePerc = method.unitsize / 300.0; // calc the relative size percentage based on max allowed
-	
+FProperty createBoxSize(int complexity, int unitSize){
+	real complexityPerc = complexity / 50.0; // calc the relative complexity percentage based on max allowed
+	real sizePerc = unitSize / 300.0; // calc the relative size percentage based on max allowed
 	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
 	real sizePoints = sizePerc * 100.0; // assign (penalty) points
-	
 	int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
 	
-	Color color = generateColor(complexityPerc); // generate a color between green -> red based on the complexity rating
-	
-	
-	bool event_openProjectView(int butnr, map[KeyModifier,bool] modifiers) {
-		println("method click!!!");
-		println(butnr);
-		renderProjectView(projectData);
-		return true;
-	}
-	
-	Figure figure = box(text(method.name),area(totalPoints), fillColor(color), onMouseDown(event_openProjectView)); // create the figure
-	
-	return figure;
+	//println(complexityPoints);
+	//println(sizePoints);
+	//println("-----------");
+	return size(complexityPoints, sizePoints);
 }
-
 
 Color generateColor(real percentage){
 	int redColor = toInt(255.0 * percentage); // assign red color based on percentage
@@ -131,15 +175,21 @@ Color generateColor(real percentage){
 	return rgb(redColor, greenColor, 0);
 }
 
-
-// ==================================================== Helper functions ===========================================================
-
-/*
-Figure createBox(int width, int height){
-	Figure redBox = box(size(width, height), fillColor("red"));
-	// Figure redBox = box(area(width*height), fillColor("red"));
-	return redBox;
-}*/
+str getDataString(){
+	str result = "";
+	if(complexityEnabled){
+		result += "complexity enabled     ";
+	}else{
+		result += "complexity dissabled     ";
+	}
+	
+	if(unitSizeEnabled){
+		result += "unitSize enabled";
+	}else{
+		result += "unitSize dissabled";
+	}
+	return result;
+}
 
 
 // helper function: The helper function copy copies an element a number of times: for example, copy(3,"a") results in list[str]: ["a","a","a"]. 
@@ -151,8 +201,35 @@ public bool aflopend(tuple[&a, num] x, tuple[&a, num] y) {
 	return x[1] > y[1];
 }
 
-public bool sortLOC(&Class a, &Class b){
+
+
+
+int calcPenaltyPoints(int complexity, int unitSize){ // not used in the boxes
+	real complexityPerc = calcComplexityPerc(complexity); // calc the relative complexity percentage based on max allowed
+	real sizePerc = unitSize / 300.0; // calc the relative size percentage based on max allowed
+	
+	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
+	real sizePoints = sizePerc * 100.0; // assign (penalty) points
+	
+	int totalPoints = 0;
+	if(complexityEnabled){
+		totalPoints += toInt(complexityPoints);
+	}
+	if(unitSizeEnabled){
+		totalPoints += toInt(sizePoints);
+	}
+	// int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
+	
+	return totalPoints;
+}
+
+// ==================================================== SORTING ===========================================================
+public bool sortUnitsize(&Class a, &Class b){
 	return a[2] > b[2];
+}
+
+public bool sortComplexity(&Class a, &Class b){
+	return a[1] > b[1];
 }
 
 
