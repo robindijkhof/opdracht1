@@ -43,21 +43,6 @@ public list[Class] getData(){
 	return classes;
 }
 
-// Waarom is CC bij het gebruik van deze methode 0?
-Class createClass(str name, list[Declaration] declarations, loc location){
-	int size = 0;
-	int cc = 1;
-	
-	for(D <- declarations){
-		visit (D) {
-			case \method(_, name, para, _):cc += 1;  // method without a implementation, cc always is 1 and impl is 0 (no body)
-			case \method(_, name, para, _, impl):cc += calculateCC(impl);  // use the name and the impl
-			case \constructor(name, para, _, impl): cc += calculateCC(impl);  // use the name and the impl
-		} 
-	}	
-		
-	return <name, cc, size, location, [<"methode1", 5, 20, |project://example-project/src/HelloWorld.java|>]>;
-}
 
 list[Method] getMethods(list[Declaration] declarations){
 	list[Method] methods = [];
