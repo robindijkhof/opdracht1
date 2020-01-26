@@ -69,8 +69,11 @@ void finalRender(list[Figure] figures){
 Figure createClassBox(Class class){
 
 	int totalPoints = calcPenaltyPoints(class.complexity, class.unitsize);
-	Color color = generateColor(calcComplexityPerc(class.complexity)); // generate a color between green -> red based on the complexity rating
+	//Color color = generateColor(calcComplexityPerc(class.complexity)); // generate a color between green -> red based on the complexity rating
 	
+	real penaltyPoints = toReal(totalPoints);
+	real penaltyPerc = penaltyPoints / 200.0;
+	Color color = generateColor(penaltyPerc);
 	
 	bool event_openMethod(int butnr, map[KeyModifier,bool] modifiers) {
 		renderClassView(class);

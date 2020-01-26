@@ -1,4 +1,4 @@
-module Opdracht2_Kevin_boxes
+module Opdracht2_AbsoluteView
 
 import util::Resources;
 import lang::java::jdt::m3::Core;
@@ -132,16 +132,16 @@ Figure createClassBox(Class class){
 
 
 Figure createMethodBox(Method method){
-	bool event_openProjectView(int butnr, map[KeyModifier,bool] modifiers) {
+	bool event_showCode(int butnr, map[KeyModifier,bool] modifiers) {
 		return true;
 	}
+	
 	
 	real penaltyPoints = toReal(calcPenaltyPoints(method.complexity, method.unitsize));
 	real penaltyPerc = penaltyPoints / 200.0;
 	Color color = generateColor(penaltyPerc);
 
-	Figure boxSized = box( createBoxSize(method.complexity, method.unitsize), fillColor(color), onMouseDown(event_openProjectView), hresizable(false), vresizable(false)); // create the figure
-	//Figure figure = box(text(method.name),createBoxSize(method.complexity, method.unitsize), fillColor(color), onMouseDown(event_openProjectView)); // create the figure
+	Figure boxSized = box( createBoxSize(method.complexity, method.unitsize), onMouseDown(event_showCode), fillColor(color),  hresizable(false), vresizable(false)); // create the figure
 	Figure figure = overlay([boxSized, text(method.name, align(0.5,0.6) )]);
 	
 	return figure;
@@ -151,6 +151,9 @@ Figure createMethodBox(Method method){
 
 // ==================================================== Helper functions ===========================================================
 
+public void openCode(Method method) {
+   render(method.name, text(readFile(method.location), font("Courier"), fontSize(11)));
+} 
 
 real calcComplexityPerc(int complexity){
 	return complexity / 50.0; // calc the relative complexity percentage based on max allowed

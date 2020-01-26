@@ -1,4 +1,4 @@
-module Opdracht2
+module Opdracht2_RelativeView
 
 import util::Resources;
 import lang::java::jdt::m3::Core;
