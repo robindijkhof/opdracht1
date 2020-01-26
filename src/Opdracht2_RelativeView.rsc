@@ -33,32 +33,27 @@ bool complexityEnabled = true;
 bool unitSizeEnabled = true;
 
 public void run(){
-	list[Class] infodata = getData();
-	//projectData = getDummyData();
-	projectData = getData();
-	// list[Class] sortedList = sort(infodata, sortLOC);
+	//projectData = getDummyData(); //test with dummy data
+	projectData = getData(); //test with real data
 	
-   	Figure complexityButton = button("Complexity", void(){complexityEnabled = !complexityEnabled; renderProjectView(projectData);});
-   	Figure unitSizeButton = button("UnitSize", void(){unitSizeEnabled = !unitSizeEnabled; renderProjectView(projectData);});
-   	Figure returnButton = button("Return", void(){renderProjectView(projectData);});
-	menu = hcat([complexityButton, unitSizeButton, returnButton]);
+   	createMenu();
 	
 	renderProjectView(projectData);
 }
 
 // --------------------- Project --------------------------------------
+// this method renders a project overview
 void renderProjectView(list[Class] projectData){
 	list[Figure] classFigures = [];
 	
 	for(Class class <- projectData) {
-		classFigures += createClassBox(class);
+		classFigures += createClassBox(class); ///create a box for each class
 	}
 
-	//Figure treemapFig = treemap(classFigures, vshrink(0.9));
-	// render("ProjectView", vcat([menu, treemapFig, text(getDataString())]));
 	finalRender(classFigures);
 }
 
+//this method combines a list of figures into a final render
 void finalRender(list[Figure] figures){
 	Figure treemapFig = treemap(figures, vshrink(0.9));
 	render("ProjectView", vcat([menu, treemapFig, text(getDataString())]));
@@ -66,23 +61,26 @@ void finalRender(list[Figure] figures){
 
 
 
+// creates a single box based on a class
 Figure createClassBox(Class class){
-
-	int totalPoints = calcPenaltyPoints(class.complexity, class.unitsize);
-	Color color = generateColor(calcComplexityPerc(class.complexity)); // generate a color between green -> red based on the complexity rating
+	real penaltyPoints = toReal(calcPenaltyPoints(class.complexity, class.unitsize)); // get total penaltyPoints
+	real penaltyPerc = penaltyPoints / 200.0; // divide by 200 to get 0-1 value
+	Color color = generateColor(penaltyPerc); //use the 0-1 to set the color from green -> red
 	
 	
+	//callback function when is clicked
 	bool event_openMethod(int butnr, map[KeyModifier,bool] modifiers) {
-		renderClassView(class);
+		renderClassView(class); // render a overview of the class that is clicked
 		return true;
 	};
 	
-	Figure figure = box(text(class.name),area(totalPoints), fillColor(color), onMouseDown(event_openMethod)); // create the figure
+	Figure figure = box(text(class.name),area(penaltyPoints), fillColor(color), onMouseDown(event_openMethod)); // create the figure
 	
 	return figure;
 }
 
 
+// calculate the penalty points
 int calcPenaltyPoints(int complexity, int unitSize){
 	real complexityPerc = calcComplexityPerc(complexity); // calc the relative complexity percentage based on max allowed
 	real sizePerc = unitSize / 300.0; // calc the relative size percentage based on max allowed
@@ -91,13 +89,12 @@ int calcPenaltyPoints(int complexity, int unitSize){
 	real sizePoints = sizePerc * 100.0; // assign (penalty) points
 	
 	int totalPoints = 0;
-	if(complexityEnabled){
+	if(complexityEnabled){ // can be disabled, not implemented
 		totalPoints += toInt(complexityPoints);
 	}
-	if(unitSizeEnabled){
+	if(unitSizeEnabled){  // can be disabled, not implemented
 		totalPoints += toInt(sizePoints);
 	}
-	// int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
 	
 	return totalPoints;
 }
@@ -110,27 +107,21 @@ real calcComplexityPerc(int complexity){
 void renderClassView(Class class){
 	list[Figure] methodFigures = [];
 	for(Method method <- class.methods) {
-		methodFigures += createMethodBox(method);
+		methodFigures += createMethodBox(method); //create a box for each method
 	}
 
-	//render("ProjectView", treemap(methodFigures));
 	finalRender(methodFigures);
 }
 
+
 Figure createMethodBox(Method method){
-	real complexityPerc = method.complexity / 50.0; // calc the relative complexity percentage based on max allowed
-	real sizePerc = method.unitsize / 300.0; // calc the relative size percentage based on max allowed
-	
-	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
-	real sizePoints = sizePerc * 100.0; // assign (penalty) points
-	
-	int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
-	
-	Color color = generateColor(complexityPerc); // generate a color between green -> red based on the complexity rating
-	
+	int totalPoints = calcPenaltyPoints(method.complexity, method.unitsize); // calc the penalt points, see: createClassBox(..)
+	real penaltyPoints = toReal(totalPoints);
+	real penaltyPerc = penaltyPoints / 200.0;
+	Color color = generateColor(penaltyPerc);
 	
 	bool event_openProjectView(int butnr, map[KeyModifier,bool] modifiers) {
-		openCode(method);	
+		openCode(method); //open the code view
 		return true;
 	}
 	
@@ -148,6 +139,14 @@ Color generateColor(real percentage){
 
 
 // ==================================================== Helper functions ===========================================================
+void createMenu(){
+	Figure complexityButton = button("Complexity", void(){complexityEnabled = !complexityEnabled; renderProjectView(projectData);});
+   	Figure unitSizeButton = button("UnitSize", void(){unitSizeEnabled = !unitSizeEnabled; renderProjectView(projectData);});
+   	Figure returnButton = button("Return", void(){renderProjectView(projectData);});
+	menu = hcat([complexityButton, unitSizeButton, returnButton]);
+}
+
+// not used
 str getDataString(){
 	str result = "";
 	if(complexityEnabled){
@@ -163,12 +162,7 @@ str getDataString(){
 	}
 	return result;
 }
-/*
-Figure createBox(int width, int height){
-	Figure redBox = box(size(width, height), fillColor("red"));
-	// Figure redBox = box(area(width*height), fillColor("red"));
-	return redBox;
-}*/
+
 
 
 // helper function: The helper function copy copies an element a number of times: for example, copy(3,"a") results in list[str]: ["a","a","a"]. 
@@ -201,7 +195,7 @@ list[Class] getDummyData(){
 
 
 public void openCode(Method method) {
-   render(method.name, text(readFile(method.location), font("Courier"), fontSize(11)));
+   render(method.name, text(readFile(method.location), font("Courier"), fontSize(11))); //render view with code
 } 
 
 

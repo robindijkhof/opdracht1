@@ -44,29 +44,32 @@ Class classSelected;
 bool inClassMode = false;
 
 public void run(){
-	//projectData = getDummyData();
-	projectData = getData();
-	// list[Class] sortedList = sort(infodata, sortLOC);
-	
-   	Figure complexityButton = button("Complexity", void(){sortmode = SORTMODE_COMPLEXITY; refresh();});
-   	Figure unitSizeButton = button("UnitSize", void(){sortmode = SORTMODE_UNITSIZE; refresh();});
-   	Figure returnButton = button("Return", void(){inClassMode = false;refresh();});
-	menu = hcat([complexityButton, unitSizeButton, returnButton], vshrink(0.05));
+	//projectData = getDummyData(); //test with dummy data
+	projectData = getData(); // test with real data
+
+   	createMenu();
 
 	refresh();
 }
 
+
+
+// this function can always be called and will render de view based on selected data
 void refresh(){
-	if(inClassMode){
+	if(inClassMode){ // if a class is selected then render this class
 		renderClassView(classSelected);
 		return;
 	}
+	
+	//if no class is selected, render the project overview
 	renderProjectView(projectData);
 }
 
 // ---------------------------------------------------- RENDERS ----------------------------------------------------------------
 void renderProjectView(list[Class] projectDataUnsorted){
 	list[Class] projectData = projectDataUnsorted;
+	
+	//based on sortMode set the order of the projectData
 	if(sortmode == SORTMODE_COMPLEXITY){
 		projectData = sort(projectDataUnsorted, sortComplexity);
 	}else if (sortmode == SORTMODE_UNITSIZE){
@@ -77,7 +80,7 @@ void renderProjectView(list[Class] projectDataUnsorted){
 	list[Figure] classFigures = [];
 	
 	for(Class class <- projectData) {
-		classFigures += createClassBox(class);
+		classFigures += createClassBox(class); //create a box for each class
 	}
 
 	finalRender(classFigures);
@@ -87,28 +90,29 @@ void renderProjectView(list[Class] projectDataUnsorted){
 void renderClassView(Class class){
 	list[Method] methodList = class.methods;
 
+	//based on sortMode set the order of the methodList
 	if(sortmode == SORTMODE_COMPLEXITY){
 		methodList = sort(class.methods, sortComplexity);
 	}else if (sortmode == SORTMODE_UNITSIZE){
 		methodList = sort(class.methods, sortUnitsize);
 	}
 
+	// set the data for classMode
 	inClassMode = true;
 	classSelected = class;
 
 	list[Figure] methodFigures = [];
 	for(Method method <- methodList) {
-		methodFigures += createMethodBox(method);
+		methodFigures += createMethodBox(method); //create a list with a box for each method
 	}
 
-	finalRender(methodFigures);
+	finalRender(methodFigures); //render the methodFigures
 }
 
 
 void finalRender(list[Figure] figures){
-	//Figure boxes = Figure(figures);
 	Figure boxes = hcat(figures);
-	render("ProjectView", vcat([menu, scrollable(boxes)]));
+	render("ProjectView", vcat([menu, scrollable(boxes)])); //combine all the figures in a single figure and render it
 }
 
 
@@ -120,6 +124,7 @@ Figure createClassBox(Class class){
 		return true;
 	};
 	
+	// assign a color based on the penatly points
 	real penaltyPoints = toReal(calcPenaltyPoints(class.complexity, class.unitsize));
 	real penaltyPerc = penaltyPoints / 200.0;
 	Color color = generateColor(penaltyPerc);
@@ -136,7 +141,7 @@ Figure createMethodBox(Method method){
 		return true;
 	}
 	
-	
+	// assign a color based on the penatly points
 	real penaltyPoints = toReal(calcPenaltyPoints(method.complexity, method.unitsize));
 	real penaltyPerc = penaltyPoints / 200.0;
 	Color color = generateColor(penaltyPerc);
@@ -151,6 +156,14 @@ Figure createMethodBox(Method method){
 
 // ==================================================== Helper functions ===========================================================
 
+void createMenu(){
+	Figure complexityButton = button("Complexity", void(){sortmode = SORTMODE_COMPLEXITY; refresh();});
+   	Figure unitSizeButton = button("UnitSize", void(){sortmode = SORTMODE_UNITSIZE; refresh();});
+   	Figure returnButton = button("Return", void(){inClassMode = false;refresh();});
+	menu = hcat([complexityButton, unitSizeButton, returnButton], vshrink(0.05));
+}
+
+//allow the user to see the code of a method
 public void openCode(Method method) {
    render(method.name, text(readFile(method.location), font("Courier"), fontSize(11)));
 } 
@@ -159,16 +172,14 @@ real calcComplexityPerc(int complexity){
 	return complexity / 50.0; // calc the relative complexity percentage based on max allowed
 }
 
+
+//this function creates the property that is used for the size of the box
 FProperty createBoxSize(int complexity, int unitSize){
 	real complexityPerc = complexity / 50.0; // calc the relative complexity percentage based on max allowed
 	real sizePerc = unitSize / 300.0; // calc the relative size percentage based on max allowed
 	real complexityPoints = complexityPerc * 100.0; // assign (penalty) points
 	real sizePoints = sizePerc * 100.0; // assign (penalty) points
-	int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
-	
-	//println(complexityPoints);
-	//println(sizePoints);
-	//println("-----------");
+
 	return size(complexityPoints, sizePoints);
 }
 
@@ -178,6 +189,7 @@ Color generateColor(real percentage){
 	return rgb(redColor, greenColor, 0);
 }
 
+//not used
 str getDataString(){
 	str result = "";
 	if(complexityEnabled){
@@ -205,9 +217,7 @@ public bool aflopend(tuple[&a, num] x, tuple[&a, num] y) {
 }
 
 
-
-
-int calcPenaltyPoints(int complexity, int unitSize){ // not used in the boxes
+int calcPenaltyPoints(int complexity, int unitSize){
 	real complexityPerc = calcComplexityPerc(complexity); // calc the relative complexity percentage based on max allowed
 	real sizePerc = unitSize / 300.0; // calc the relative size percentage based on max allowed
 	
@@ -215,14 +225,13 @@ int calcPenaltyPoints(int complexity, int unitSize){ // not used in the boxes
 	real sizePoints = sizePerc * 100.0; // assign (penalty) points
 	
 	int totalPoints = 0;
-	if(complexityEnabled){
+	if(complexityEnabled){ // can be disabled, not implemented
 		totalPoints += toInt(complexityPoints);
 	}
-	if(unitSizeEnabled){
+	if(unitSizeEnabled){ // can be disabled, not implemented
 		totalPoints += toInt(sizePoints);
 	}
-	// int totalPoints = toInt(complexityPoints) + toInt(sizePoints); // calc the total (penalty) points for this method
-	
+
 	return totalPoints;
 }
 
